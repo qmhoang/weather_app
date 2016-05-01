@@ -1,20 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
+    <div class="container">
 
-    <form class="form-signin" action="/login" method="POST">
-        <h2 class="form-signin-heading">Please sign in</h2>
+    <form class="form-signin" action="/create_user" method="POST">
+        <h2 class="form-signin-heading">Sign up</h2>
         <label for="inputUserName" class="sr-only">Username</label>
         <input name="username" type="text" id="inputUserName" class="form-control" placeholder="Username" required
                autofocus/>
         <label for="inputPassword" class="sr-only">Password</label>
         <input name="password" type="password" id="inputPassword" class="form-control" placeholder="Password" required/>
-        <button name="submit" class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <button name="submit" class="btn btn-lg btn-primary btn-block" type="submit">Sign up</button>
     </form>
-    <a class="btn btn-primary" href="/create_user" role="button">Sign up</a>
-
     {% if error %}
     <p class="error"><strong>Error:</strong> {{ error }}
-        {% endif %}
+    {% endif %}
 </div>
 {% endblock %}

@@ -21,7 +21,7 @@ def index():
         for l in locations:
             city_weather = requests.get(app.config['LOCATION_SERVICE_URL'] + '/api/weather/{}'.format(l['id']),
                                         headers=token).json()
-            print(city_weather)
+            # print(city_weather)
             weathers.append(city_weather)
 
         return render_template('/main.html', weathers=weathers)
@@ -40,11 +40,39 @@ def login():
         if r.status_code == 200:
             session['token'] = r.json()['token']
             return redirect('/')
+
         else:
             error = 'Invalid username/password'
     # the code below is executed if the request method
     # was GET or the credentials were invalid
     return render_template('login.html', error=error)
+
+
+@app.route('/create_user', methods=['GET'])
+def create_user_view():
+    return render_template('create_user.html')
+
+
+@app.route('/create_user', methods=['POST'])
+def create_user():
+    error = None
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        r = requests.post(app.config['USER_SERVICE_URL'] + '/api/users',
+                          data={'username': username, 'password': password})
+
+        if r.status_code == 201:
+            return redirect('/')
+        elif r.status_code == 400:
+            error = 'username already exist'
+        else:
+            error = 'Invalid username/password'
+    # the code below is executed if the request method
+    # was GET or the credentials were invalid
+    return render_template('create_user.html', error=error)
 
 
 @app.route('/settings', methods=['GET'])
@@ -111,4 +139,4 @@ def logout():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=8000)
