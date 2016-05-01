@@ -19,38 +19,18 @@ services:
       - postgres
       - user_service
 
-  # web:
-  #   restart: always
-  #   build: ./web
-  #   expose:
-  #     - "8000"
-  #   links:
-  #     - postgres
-  #     - rest_services
-  #   volumes:
-  #     - /usr/src/app/static
-  #   environment:
-  #     DEBUG: "false"
-  #     SECRET_KEY: "5(15ds+i2+%ik6z&!yer+ga9m=e%jcqiz_5wszg)r-z!2--b2d"
-  #     DB_NAME: postgres
-  #     DB_USER: postgres
-  #     DB_PASS: postgres
-  #     DB_SERVICE: postgres
-  #     DB_PORT: 5432
-  #   command: /usr/local/bin/gunicorn -w 2 -b :8000 app:app
-
-  # nginx:
-  #   restart: always
-  #   build: ./nginx/
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - /www/static
-  #   volumes_from:
-  #     - web
-  #   links:
-  #     - web
-  #     - rest_services
+  web:
+    restart: always
+    build: ./web
+    expose:
+      - "8000"
+    links:
+      - postgres
+      - user_service
+      - location_service
+    volumes:
+      - /usr/src/app/static
+    command: python app.py
 
   data:
     restart: "no"

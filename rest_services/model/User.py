@@ -31,7 +31,8 @@ class User(Model):
 class Location(Model):
     __tablename__ = 'sites'
 
-    user_id = Column(types.Integer, ForeignKey('users.id'), index=True, primary_key=True, nullable=False)
-    address_type = Column(Enum("LAT_LONG", "CITY", "CITY_COUNTRY", "ZIPCODE", name="address_type"), primary_key=True, nullable=False)
-    address = Column(types.String(50), primary_key=True, nullable=False)  # could be zip code, city, lat & long, whatever
+    id = Column(types.Integer, primary_key=True, nullable=False)
+    user_id = Column(types.Integer, ForeignKey('users.id'), index=True, nullable=False)
+    address_type = Column(Enum("LAT_LONG", "CITY", "CITY_COUNTRY", "ZIPCODE", name="address_type"), nullable=False)
+    address = Column(types.String(50), nullable=False)  # could be zip code, city, lat & long, whatever
     UniqueConstraint(user_id, address_type, address)

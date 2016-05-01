@@ -9,13 +9,14 @@ from model.User import Model, Location
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'change-me-location!!!!!'
-# app.config['USER_SERVICE_URL'] = 'http://user_service:5000/api/me'
-# app.config['HOST'] = '0.0.0.0'
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@postgres:5432/postgres'
-app.config['USER_SERVICE_URL'] = 'http://192.168.99.100:5000/api/me'
-app.config['HOST'] = '127.0.0.1'
+app.config['USER_SERVICE_URL'] = 'http://user_service:5000/api/me'
+app.config['HOST'] = '0.0.0.0'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@postgres:5432/postgres'
+# app.config['USER_SERVICE_URL'] = 'http://192.168.99.100:5000/api/me'
+# app.config['HOST'] = '127.0.0.1'
+app.config['PORT'] = '5001'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@192.168.99.100:5432/postgres'
-app.config['OPENWEATHERMAP_SERVICE_URL'] = 'http://api.openweathermap.org/data/2.5/weather'
+app.config['OPENWEATHERMAP_SERVICE_URL'] = 'http://api.openweathermap.org/data/2.5/'
 app.config['OPENWEATHERMAP_API_KEY'] = '0c77231223df5bae357bd2bd85104554'
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 
@@ -35,6 +36,7 @@ location_get_parser.add_argument('address_type', required=True, help='address_ty
 location_get_parser.add_argument('address', required=True, help='address cannot be blank', location='args')
 
 location_resource_fields = {
+    'id': fields.Integer,
     'user_id': fields.String,
     'address_type': fields.String,
     'address': fields.String
@@ -46,10 +48,10 @@ zipcode_pattern = re.compile('^[0-9]{5}$')
 @auth.verify_token
 def verify_token(token):
     g.user = None
+    g.token = token
 
     resp = requests.get(app.config['USER_SERVICE_URL'], headers={'Authorization': 'token ' + token})
 
-    print('status={}'.format(resp.status_code))
     if resp.status_code == 200:
         g.user = resp.json()
         return True
@@ -61,17 +63,30 @@ class LocationApi(Resource):
     decorators = [auth.login_required]
 
     # not really needed
-    # @marshal_with(location_resource_fields)
-    # def get(self):
-    #     args = location_get_parser.parse_args()
-    #
-    #     address_type = args['address_type']
-    #     address = args['address']
-    #
-    #     return Location.query.get((g.user['id'], address_type, address))
+    @marshal_with(location_resource_fields)
+    def get(self, id: int):
+        g_user_id = g.user['id']
 
+        loc = Location.query.filter_by(id=id).first()
+
+        if loc.user_id != g_user_id:
+            abort(401)  # deleting an location that's not yours
+
+        return loc
+
+    @marshal_with(location_resource_fields)
     def delete(self, id: int):
-        pass
+        g_user_id = g.user['id']
+
+        loc = Location.query.filter_by(id=id).first()
+
+        if loc.user_id != g_user_id:
+            abort(401)  # deleting an location that's not yours
+        else:
+            db.session.delete(loc)
+            db.session.commit()
+
+        return loc
 
 
 class MyLocationsApi(Resource):
@@ -79,7 +94,8 @@ class MyLocationsApi(Resource):
 
     @marshal_with(location_resource_fields)
     def get(self):
-        return Location.query.filter_by(user_id=g.user['id']).all()
+        locations = Location.query.filter_by(user_id=g.user['id']).all()
+        return locations
 
     @marshal_with(location_resource_fields)
     def post(self):
@@ -89,7 +105,7 @@ class MyLocationsApi(Resource):
         address_type = args['address_type']
         address = args['address']
 
-        return post_location(g_user_id, g_user_id, address_type, address)
+        return post_location(g_user_id, address_type, address)
 
 
 class UserLocationsApi(Resource):
@@ -116,10 +132,10 @@ class UserLocationsApi(Resource):
         address_type = args['address_type']
         address = args['address']
 
-        return post_location(g_user_id, user_id, address_type, address)
+        return post_location(g_user_id, address_type, address)
 
 
-def post_location(g_user_id, user_id, address_type, address):
+def post_location(g_user_id, address_type, address):
     if address_type == "ZIPCODE" and zipcode_pattern.search(address) is None:
         abort(400, message='invalid zip code format')
 
@@ -135,24 +151,37 @@ def post_location(g_user_id, user_id, address_type, address):
 
 # local proxy, insert caching here
 class Weather(Resource):
-    def get(self):
-        args = location_parser.parse_args()
+    decorators = [auth.login_required]
 
-        address_type = args['address_type']
-        address = args['address']
+    def get(self, location_id: int):
+        r = requests.get('http://{}:{}/api/location/{}'.format(app.config['HOST'], app.config['PORT'], location_id),
+                         headers={'Authorization': 'Token ' + g.token}).json()
+
+        address_type = r['address_type']
+        address = r['address']
 
         if address_type == "ZIPCODE":
-            r = requests.get(app.config['OPENWEATHERMAP_SERVICE_URL'],
-                             params={'zip': [address, 'us'], 'appid': app.config['OPENWEATHERMAP_API_KEY']})
-            return r.json()
+            # params = {'zip': (address, 'us'), 'appid': app.config['OPENWEATHERMAP_API_KEY']}
+            # print(params)
+            weather = requests.get(app.config['OPENWEATHERMAP_SERVICE_URL'] + '/weather?appid={}&zip={},us'.format(
+                app.config['OPENWEATHERMAP_API_KEY'], address)).json()
+        else:
+            weather = requests.get(app.config['OPENWEATHERMAP_SERVICE_URL'] + '/weather?appid={}&q={}'.format(
+                app.config['OPENWEATHERMAP_API_KEY'], address)).json()
 
-        abort(400)
+        city_id = weather['id']
+        forecast = requests.get(app.config['OPENWEATHERMAP_SERVICE_URL'] + 'forecast?appid={}&id={}&cnt=3'.format(
+            app.config['OPENWEATHERMAP_API_KEY'], city_id)).json()
+
+        weather['list'] = forecast['list']
+
+        return weather
 
 
-api.add_resource(LocationApi, '/api/location')
+api.add_resource(LocationApi, '/api/location/<int:id>')
 api.add_resource(UserLocationsApi, '/api/<int:user_id>/location')
 api.add_resource(MyLocationsApi, '/api/me/location')
-api.add_resource(Weather, '/api/weather')
+api.add_resource(Weather, '/api/weather/<int:location_id>')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(threaded=True, debug=True, host=app.config['HOST'], port=int(app.config['PORT']))

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% for city in weathers %}
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{city.name}} - {{city.sys.country}} : {{city.weather[0].description}}</h3>
+        </div>
+        <div class="panel-body">
+            <ul class="list-group">
+                <li class="list-group-item text-right">
+                    <span class="pull-left"><strong>Temperature</strong></span>
+                    {{ (city.main.temp * (9/5) - 459.67)|round(1) }} °F
+                </li>
+                <li class="list-group-item text-right"><span class="pull-left"><strong>Humidity</strong></span>
+                    {{ city.main.humidity }} %
+                </li>
+
+                <li>
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Temperature</th>
+                            <th>Humidity</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for forecast in city.list %}
+                        <tr>
+                            <th>{{forecast.dt_txt }}</th>
+                            <td>{{ (forecast.main.temp * (9/5) - 459.67)|round(1) }} °F</td>
+                            <td>{{ forecast.main.humidity }}</td>
+                            <td>{{ forecast.weather[0].description }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </li>
+
+
+            </ul>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

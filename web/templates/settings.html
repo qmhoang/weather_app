@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-sm-10"><h1>{{ user }}</h1></div>
+    </div>
+    <div class="row">
+        <div class="col-sm-3"><!--left col-->
+            <ul class="list-group">
+                <li class="list-group-item text-muted">Profile</li>
+                <li class="list-group-item text-right"><span class="pull-left"><strong>ID:</strong></span> {{ id }}
+                </li>
+            </ul>
+        </div>
+        <div class="col-sm-9">
+            <ul class="list-group">
+                <div id="content"></div>
+                <li class="list-group-item text-muted">Locations Tracked<i class="fa fa-dashboard fa-1x"></i>
+
+                </li>
+
+                <form action="/delete_location" method="post">
+                    {% for l in locations %}
+                    <li class="list-group-item text-right">
+                        <span class="pull-left"><input name="address" value="{{l.id}}" type="checkbox"/></span>
+
+                        <strong>{{ l.address }}</strong> {{ l.address_type }}
+                    </li>
+                    {% endfor %}
+                    <span class="pull-right"><button class="btn btn-default" type="submit">Delete</button></span>
+                </form>
+            </ul>
+
+
+            <form action="/add_location" method="post">
+                <div class="input-group">
+                    <input name="address" type="text" class="form-control" placeholder="location">
+                    <span class="pull-right"><button class="btn btn-default" type="submit">Add</button></span>
+                </div>
+            </form>
+
+
+        </div>
+    </div>
+</div>
+{% endblock %}
