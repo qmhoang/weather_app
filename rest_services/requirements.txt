@@ -1,0 +1,11 @@
+flask 
+flask_alchy 
+sqlalchemy
+flask_restful 
+flask_httpauth 
+itsdangerous
+alchy
+psycopg2
+requests
+passlib
+gunicorn
