@@ -3,8 +3,8 @@ import requests, re, requests.auth, json, time
 from flask import Flask, redirect, request, render_template, session
 
 app = Flask(__name__)
-app.config['USER_SERVICE_URL'] = 'http://192.168.99.100:5000'
-app.config['LOCATION_SERVICE_URL'] = 'http://192.168.99.100:5001'
+app.config['USER_SERVICE_URL'] = 'http://user_service:5000'
+app.config['LOCATION_SERVICE_URL'] = 'http://location_service:5001'
 # app.config['LOCATION_SERVICE_URL'] = 'http://localhost:5001'
 app.secret_key = 'really secret key'
 
@@ -123,6 +123,11 @@ def delete_location():
             requests.delete(app.config['LOCATION_SERVICE_URL'] + '/api/location/{}'.format(l[1]), headers=token)
 
     return redirect('/settings')
+
+
+@app.errorhandler(Exception)
+def all_exception_handler(error):
+    return redirect('/logout')
 
 
 def get_token():

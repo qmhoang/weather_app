@@ -4,8 +4,8 @@ services:
     restart: always
     command: ./start_user.sh
     build: ./rest_services
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     links:
       - postgres
 
@@ -13,8 +13,8 @@ services:
     restart: always
     command: ./start_location.sh
     build: ./rest_services
-    ports:
-      - "5001:5001"
+    expose:
+      - "5001"
     links:
       - postgres
       - user_service
